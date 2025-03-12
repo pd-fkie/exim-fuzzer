@@ -2,7 +2,7 @@
 
 This repo contains a fuzzer for [Exim](https://exim.org) that aims to be more on the "professional"
 side of fuzzing.
-The individual SMTP packets are passed to Exim via shared memory channel, the fuzzer has custom
+The individual SMTP packets are passed to Exim via a shared memory channel, the fuzzer has custom
 mutations tailored towards the SMTP protocol and we tried to make the target as scalable as possible
 by reducing its system calls to a minimum.
 
@@ -12,7 +12,7 @@ and multiple other bugs before they could make it into the final release. See [F
 If you want to run this fuzzer yourself, follow the instructions below.
 
 ## Build Exim
-1. Checkout the [Exim](./Exim) submodule:
+1. Checkout the `Exim` submodule:
 ```
 git submodule update --init ./Exim
 ```
@@ -28,9 +28,14 @@ make
    permission bits to `640`
 
 ## Build libdesock
-Checkout the [libdesock](./libdesock) submodule and copy our custom [hooks.c](./hooks.c) into the `src/` directory of libdesock.
+Checkout the `libdesock` submodule
+```
+git submodule update --init ./libdesock
+```
+and copy our custom [hooks.c](./hooks.c) into the `src/` directory of libdesock.
 Then, execute:
 ```
+cd libdesock
 meson setup ./build
 cd build
 meson configure -D allow_dup_stdin=true -D multiple_requests=true -D request_delimiter="--------"
