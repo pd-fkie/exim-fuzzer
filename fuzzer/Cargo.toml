@@ -1,0 +1,24 @@
+[package]
+name = "fuzzer"
+version = "1.0.0"
+edition = "2021"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+debug = true
+
+[dependencies]
+#libafl = { version = "0.15.1", features = ["prelude"] }
+#libafl_bolts = "0.15.1"
+libafl = { git = "https://github.com/AFLplusplus/LibAFL", rev = "f9715392af00bc1419dc54b203810d41cc430305", features = ["prelude"] }
+libafl_bolts = { git = "https://github.com/AFLplusplus/LibAFL", rev = "f9715392af00bc1419dc54b203810d41cc430305" }
+serde = "1.0.210"
+ahash = "0.8"
+smallvec = "1.13"
+clap = { version = "4.5", features = ["default", "derive"] }
+mimalloc = "0.1"
+nix = "0.29.0"
+libc = "0.2.159"
+postcard = "1.0.10"

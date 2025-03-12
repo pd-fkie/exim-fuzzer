@@ -1,0 +1,48 @@
+CC=afl-clang-fast
+LNCC=afl-clang-fast
+
+# fast build:
+CFLAGS=-O3 -g -fomit-frame-pointer
+LFLAGS=
+
+# asan build:
+#CFLAGS=-g -O0 -fsanitize=address -fno-omit-frame-pointer
+#LFLAGS=-fsanitize=address
+
+BIN_DIRECTORY=<dir>/result
+CONFIGURE_FILE=<dir>/result/exim.conf
+SPOOL_DIRECTORY=<dir>/result/spool
+EXIM_TMPDIR=<dir>/tmp
+
+EXIM_USER=<some user>
+FIXED_NEVER_USERS=root
+CONFIGURE_OWNER=<some user>
+
+DISABLE_TLS=yes
+ROUTER_ACCEPT=yes
+ROUTER_DNSLOOKUP=yes
+ROUTER_IPLITERAL=yes
+ROUTER_MANUALROUTE=yes
+ROUTER_QUERYPROGRAM=yes
+ROUTER_REDIRECT=yes
+TRANSPORT_APPENDFILE=yes
+TRANSPORT_AUTOREPLY=yes
+TRANSPORT_PIPE=yes
+TRANSPORT_SMTP=yes
+LOOKUP_DBM=yes
+LOOKUP_LSEARCH=yes
+LOOKUP_DNSDB=yes
+PCRE2_CONFIG=yes
+DISABLE_MAL_AVE=yes
+DISABLE_MAL_KAV=yes
+DISABLE_MAL_MKS=yes
+DISABLE_DNSSEC=yes
+AUTH_PLAINTEXT=yes
+HEADERS_CHARSET="ISO-8859-1"
+SYSLOG_LOG_PID=yes
+EXICYCLOG_MAX=10
+COMPRESS_COMMAND=/usr/bin/gzip
+COMPRESS_SUFFIX=gz
+ZCAT_COMMAND=/usr/bin/zcat
+SYSTEM_ALIASES_FILE=/etc/aliases
+

@@ -1,0 +1,6 @@
+[submodule "Exim"]
+	path = Exim
+	url = https://github.com/exim/Exim
+[submodule "libdesock"]
+	path = libdesock
+	url = https://github.com/fkie-cad/libdesock

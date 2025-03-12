@@ -1,0 +1,322 @@
+diff --git a/src/src/daemon.c b/src/src/daemon.c
+index 2af453914..9300814a9 100644
+--- a/src/src/daemon.c
++++ b/src/src/daemon.c
+@@ -12,6 +12,7 @@
+ 
+ #include "exim.h"
+ 
++static int _in_target = 1;
+ 
+ /* Structure for holding data for each SMTP connection */
+ 
+@@ -140,6 +141,7 @@ if (smtp_out) smtp_printf("421 %s\r\n", SP_NO_MORE, smtp_msg);
+ static void
+ unlink_notifier_socket(void)
+ {
++  return;
+ #ifndef EXIM_HAVE_ABSTRACT_UNIX_SOCKETS
+ DEBUG(D_any) debug_printf("unlinking notifier socket %s\n", notifier_socket_name);
+ Uunlink(notifier_socket_name);
+@@ -989,6 +991,7 @@ Returns: true on success, false + errno==EACCES otherwise
+ static BOOL
+ operate_on_pid_file(const enum pid_op operation, const pid_t pid)
+ {
++  return TRUE;
+ char pid_line[sizeof(int) * 3 + 2];
+ const int pid_len = snprintf(pid_line, sizeof(pid_line), "%ld\n", (long)pid);
+ BOOL lines_match = FALSE;
+@@ -1192,6 +1195,7 @@ return offsetof(struct sockaddr_un, sun_path)
+ static void
+ daemon_notifier_socket(void)
+ {
++  return;
+ int fd;
+ const uschar * where;
+ struct sockaddr_un sa_un = {.sun_family = AF_UNIX};
+@@ -2608,6 +2612,12 @@ report_time_since(&timestamp_startup, US"daemon loop start");	/* testcase 0022 *
+ 
+ /* Enter the never-ending loop... */
+ 
++#ifdef __AFL_INIT
++  _in_target = 0;
++  __AFL_INIT();
++  _in_target = 1;
++#endif
++
+ for (;;)
+   {
+   int nolisten_sleep = 60;
+@@ -2823,6 +2833,7 @@ for (;;)
+         handle_smtp_call(fd_polls, listen_socket_count, accept_socket,
+           (struct sockaddr *)&accepted);
+         }
++        exim_exit(0);
+       }
+     }
+ 
+@@ -2878,6 +2889,34 @@ for (;;)
+ /* Control never reaches here */
+ }
+ 
++int execv(const char* pathname, char* const argv[]) {
++  (void) pathname;
++  (void) argv;
++  while (1) abort();
++}
++
++int execve(const char* pathname, char* const argv[], char* const envp[]) {
++  (void) pathname;
++  (void) argv;
++  (void) envp;
++  while (1) abort();
++}
++
++#include <sys/syscall.h>
++
++pid_t fork (void) {
++  if (_in_target) {
++    while(1) abort();
++  } else {
++    return syscall(SYS_fork);
++  }
++}
++
++unsigned int alarm (unsigned int sec) {
++  (void) sec;
++  return 0;
++}
++
+ /* vi: aw ai sw=2
+ */
+ /* End of exim_daemon.c */
+diff --git a/src/src/deliver.c b/src/src/deliver.c
+index 9363f18ba..9626fe745 100644
+--- a/src/src/deliver.c
++++ b/src/src/deliver.c
+@@ -2347,7 +2347,7 @@ if ((pid = exim_fork(US"delivery-local")) == 0)
+   half - for transports that exec things (e.g. pipe). Then set the required
+   gid/uid. */
+ 
+-  (void)close(pfd[pipe_read]);
++  //(void)close(pfd[pipe_read]);
+   (void)fcntl(pfd[pipe_write], F_SETFD, fcntl(pfd[pipe_write], F_GETFD) |
+     FD_CLOEXEC);
+   exim_setugid(uid, gid, use_initgroups,
+@@ -2461,7 +2461,7 @@ if ((pid = exim_fork(US"delivery-local")) == 0)
+   and close the pipe we were writing down before exiting. */
+ 
+   (void)close(pfd[pipe_write]);
+-  exim_exit(EXIT_SUCCESS);
++  //exim_exit(EXIT_SUCCESS);
+   }
+ 
+ /* Back in the main process: panic if the fork did not succeed. This seems
+@@ -2587,7 +2587,7 @@ when Exim was called from an MUA that set SIGCHLD to SIG_IGN. When that
+ happens, wait() doesn't recognize the termination of child processes. Exim now
+ resets SIGCHLD to SIG_DFL, but this code should still be robust. */
+ 
+-while ((rc = wait(&status)) != pid)
++while ((rc = pid) != pid)
+   if (rc < 0 && errno == ECHILD)      /* Process has vanished */
+     {
+     log_write(0, LOG_MAIN, "%s transport process vanished unexpectedly",
+@@ -2596,7 +2596,7 @@ while ((rc = wait(&status)) != pid)
+     break;
+     }
+ 
+-if ((status & 0xffff) != 0)
++if ((status & 0) != 0)
+   {
+   int msb = (status >> 8) & 255;
+   int lsb = status & 255;
+diff --git a/src/src/functions.h b/src/src/functions.h
+index dacb73234..bf72615f8 100644
+--- a/src/src/functions.h
++++ b/src/src/functions.h
+@@ -1393,7 +1393,7 @@ exim_fork(const unsigned char * purpose)
+ pid_t pid;
+ DEBUG(D_any)
+   debug_printf_indent("%s forking for %s\n", process_purpose, purpose);
+-if ((pid = fork()) == 0)
++if ((pid = 0) == 0)
+   {
+   f.daemon_listen = FALSE;
+   process_purpose = purpose;
+diff --git a/src/src/host.c b/src/src/host.c
+index 20fa7e696..f759e762f 100644
+--- a/src/src/host.c
++++ b/src/src/host.c
+@@ -1578,7 +1578,17 @@ connection. */
+ int
+ host_name_lookup(void)
+ {
+-int sep = 0, old_pool, rc, yield;
++  int old_pool = store_pool;
++  store_pool = POOL_PERM;
++  uschar * s = store_get(sizeof("localhost"), GET_TAINTED);
++  strcpy(s, "localhost");
++  sender_host_name = s;
++  host_lookup_msg = "";
++  sender_host_aliases = NULL;
++  store_pool = old_pool;
++  return OK;
++  
++int sep = 0, rc, yield;
+ uschar *save_hostname;
+ uschar **aliases;
+ uschar *ordername;
+diff --git a/src/src/log.c b/src/src/log.c
+index 18afc9e49..fc625ab64 100644
+--- a/src/src/log.c
++++ b/src/src/log.c
+@@ -856,6 +856,8 @@ Returns:    nothing
+ static void
+ log_vwrite(unsigned int selector, int flags, const char * format, va_list ap)
+ {
++  if ((flags & LOG_PANIC_DIE) == LOG_PANIC_DIE) exim_exit(1);
++  return;
+ int paniclogfd;
+ ssize_t written_len;
+ gstring gs = { .size = LOG_BUFFER_SIZE-2, .ptr = 0, .s = log_buffer };
+diff --git a/src/src/os.c b/src/src/os.c
+index 5679c6bf7..63192d8c2 100644
+--- a/src/src/os.c
++++ b/src/src/os.c
+@@ -42,6 +42,7 @@ should be set to be ignored. This function is used only for catching SIGUSR1.
+ void
+ os_restarting_signal(int sig, void (*handler)(int))
+ {
++  return;
+ /* Many systems have the SA_RESTART sigaction for specifying that a signal
+ should restart system calls. These include SunOS5, AIX, BSDI, IRIX, FreeBSD,
+ OSF1, Linux and HP-UX 10 (but *not* HP-UX 9). */
+@@ -99,6 +100,7 @@ just use the normal signal() function and hope for the best. */
+ void
+ os_non_restarting_signal(int sig, void (*handler)(int))
+ {
++  return;
+ /* Many systems have the SA_RESTART sigaction for specifying that a signal
+ should restart system calls. These include SunOS5, AIX, BSDI, IRIX, FreeBSD,
+ OSF1, Linux and HP-UX 10 (but *not* HP-UX 9). */
+diff --git a/src/src/receive.c b/src/src/receive.c
+index 0092a8cf5..a7c97f77e 100644
+--- a/src/src/receive.c
++++ b/src/src/receive.c
+@@ -985,6 +985,7 @@ read_message_bdat_smtp(FILE * fout)
+ int linelength = 0, ch;
+ enum CH_STATE ch_state = LF_SEEN;
+ BOOL fix_nl = FALSE;
++BOOL put_nl = FALSE;
+ 
+ for(;;)
+   {
+@@ -1008,7 +1009,7 @@ for(;;)
+       if (fout)
+ 	{
+ 	if (fseek(fout, -1, SEEK_CUR) < 0)	return END_PROTOCOL;
+-	if (fgetc(fout) == '\n')		return END_DOT;
++	if (fgetc(fout) == '\n' || put_nl)		return END_DOT;
+ 	}
+ 
+       if (linelength == -1)    /* \r already seen (see below) */
+@@ -1072,6 +1073,7 @@ for(;;)
+   if (fout)
+     {
+     if (fputc(ch, fout) == EOF) return END_WERROR;
++    put_nl = (ch == '\n');
+     if (message_size > thismessage_size_limit) return END_SIZE;
+     }
+   if(ch == '\n')
+@@ -3211,7 +3213,7 @@ directory if it isn't there. */
+ spool_name = spool_fname(US"input", message_subdir, message_id, US"-D");
+ DEBUG(D_receive) debug_printf("Data file name: %s\n", spool_name);
+ 
+-if ((data_fd = Uopen(spool_name, O_RDWR|O_CREAT|O_EXCL, SPOOL_MODE)) < 0)
++if ((data_fd = Uopen("/dev/null", O_RDWR, SPOOL_MODE)) < 0)
+   {
+   if (errno == ENOENT)
+     {
+@@ -3228,10 +3230,10 @@ if ((data_fd = Uopen(spool_name, O_RDWR|O_CREAT|O_EXCL, SPOOL_MODE)) < 0)
+ /* Make sure the file's group is the Exim gid, and double-check the mode
+ because the group setting doesn't always get set automatically. */
+ 
+-if (0 != exim_fchown(data_fd, exim_uid, exim_gid, spool_name))
++/*if (0 != exim_fchown(data_fd, exim_uid, exim_gid, spool_name))
+   log_write_die(0, LOG_MAIN,
+     "Failed setting ownership on spool file %s: %s",
+-    spool_name, strerror(errno));
++    spool_name, strerror(errno));*/
+ (void)fchmod(data_fd, SPOOL_MODE);
+ 
+ /* We now have data file open. Build a stream for it and lock it. We lock only
+@@ -3245,9 +3247,9 @@ lock_data.l_whence = SEEK_SET;
+ lock_data.l_start = 0;
+ lock_data.l_len = spool_data_start_offset(message_id);
+ 
+-if (fcntl(data_fd, F_SETLK, &lock_data) < 0)
++/*if (fcntl(data_fd, F_SETLK, &lock_data) < 0)
+   log_write_die(0, LOG_MAIN, "Cannot lock %s (%d): %s", spool_name,
+-    errno, strerror(errno));
++    errno, strerror(errno));*/
+ 
+ /* We have an open, locked data file. Write the message id to it to make it
+ self-identifying. Then read the remainder of the input of this message and
+diff --git a/src/src/smtp_in.c b/src/src/smtp_in.c
+index de96c4aa2..2fc6fd20e 100644
+--- a/src/src/smtp_in.c
++++ b/src/src/smtp_in.c
+@@ -208,7 +208,7 @@ static smtp_cmd_list cmd_list[] = {
+   { "quit",       sizeof("quit")-1,       QUIT_CMD, FALSE, TRUE  },
+   { "noop",       sizeof("noop")-1,       NOOP_CMD, TRUE,  FALSE },
+   { "atrn",       sizeof("atrn")-1,       ATRN_CMD, TRUE,  FALSE },
+-  { "etrn",       sizeof("etrn")-1,       ETRN_CMD, TRUE,  FALSE },
++//  { "etrn",       sizeof("etrn")-1,       ETRN_CMD, TRUE,  FALSE },
+   { "vrfy",       sizeof("vrfy")-1,       VRFY_CMD, TRUE,  FALSE },
+   { "expn",       sizeof("expn")-1,       EXPN_CMD, TRUE,  FALSE },
+   { "help",       sizeof("help")-1,       HELP_CMD, TRUE,  FALSE },
+@@ -485,7 +485,7 @@ smtp_refill(unsigned lim)
+ int rc, save_errno;
+ 
+ if (!smtp_out || !smtp_in) return FALSE;
+-fflush(smtp_out);
++//fflush(smtp_out);
+ if (smtp_receive_timeout > 0) ALARM(smtp_receive_timeout);
+ 
+ /* Limit amount read, so non-message data is not fed to DKIM.
+diff --git a/src/src/spool_out.c b/src/src/spool_out.c
+index 8c89c4589..c3aceba20 100644
+--- a/src/src/spool_out.c
++++ b/src/src/spool_out.c
+@@ -156,6 +156,7 @@ Returns:  the size of the header texts on success;
+ int
+ spool_write_header(const uschar * id, int where, uschar ** errmsg)
+ {
++  return 0;
+ int fd, size_correction;
+ FILE * fp;
+ struct stat statbuf;
+@@ -462,6 +463,7 @@ static BOOL
+ make_link(const uschar * dir, const uschar * dq, const uschar * subdir, const uschar * id,
+   const uschar * suffix, const uschar * from, const uschar * to, BOOL noentok)
+ {
++  return TRUE;
+ uschar * fname = spool_fname(string_sprintf("%s%s", from, dir), subdir, id, suffix);
+ uschar * tname = spool_q_fname(string_sprintf("%s%s", to,   dir), dq, subdir, id, suffix);
+ if (Ulink(fname, tname) < 0 && (!noentok || errno != ENOENT))
+@@ -499,6 +501,7 @@ static BOOL
+ break_link(const uschar * dir, const uschar * subdir, const uschar * id,
+   const uschar * suffix, const uschar * from, BOOL noentok)
+ {
++  return TRUE;
+ uschar * fname = spool_fname(string_sprintf("%s%s", from, dir), subdir, id, suffix);
+ if (Uunlink(fname) < 0 && (!noentok || errno != ENOENT))
+   {
+@@ -533,6 +536,7 @@ BOOL
+ spool_move_message(const uschar * id, const uschar * subdir,
+   const uschar * from, const uschar * to)
+ {
++  return TRUE;
+ uschar * dest_qname = queue_name_dest ? queue_name_dest : queue_name;
+ 
+ /* Since we are working within the spool, de-taint the dest queue name */
