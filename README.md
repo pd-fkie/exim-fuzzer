@@ -14,13 +14,14 @@ If you want to run this fuzzer yourself, follow the instructions below.
 ## Build Exim
 1. Checkout the `Exim` submodule:
 ```
-git submodule update --init ./Exim
+git submodule update --init --depth=1 ./Exim
 ```
 2. Create Exim's Makefile by copying [LocalMakefile](./LocalMakefile) to `./Exim/src/Local/Makefile`
    and adjust all variables to your system
 3. Apply the patches in [patches](./patches)
 4. Compile exim by invoking
 ```
+export EXIM_RELEASE_VERSION="fuzz"
 make
 ```
 5. Prepare Exim's runtime by copying [exim.conf](./exim.conf) to the `CONFIGURE_FILE` location and setting its
@@ -29,7 +30,7 @@ make
 ## Build libdesock
 Checkout the `libdesock` submodule
 ```
-git submodule update --init ./libdesock
+git submodule update --init --depth=1 ./libdesock
 ```
 and copy our custom [hooks.c](./hooks.c) into the `src/` directory of libdesock.
 Then, execute:
