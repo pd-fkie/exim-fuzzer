@@ -18,8 +18,7 @@ git submodule update --init ./Exim
 ```
 2. Create Exim's Makefile by copying [LocalMakefile](./LocalMakefile) to `./Exim/src/Local/Makefile`
    and adjust all variables to your system
-3. Apply the patches in [patches](./patches). Note that the order of the patches is important: First apply [base.diff](./patches/base.diff) and
-   then all `bug-*.diff` patches in ascending order 
+3. Apply the patches in [patches](./patches)
 4. Compile exim by invoking
 ```
 make

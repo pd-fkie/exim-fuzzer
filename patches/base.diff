@@ -1,16 +1,17 @@
 diff --git a/src/src/daemon.c b/src/src/daemon.c
-index 2af453914..9300814a9 100644
+index 3cecd6482..18c4a5bef 100644
 --- a/src/src/daemon.c
 +++ b/src/src/daemon.c
-@@ -12,6 +12,7 @@
+@@ -12,6 +12,8 @@
  
  #include "exim.h"
  
 +static int _in_target = 1;
++
  
  /* Structure for holding data for each SMTP connection */
  
-@@ -140,6 +141,7 @@ if (smtp_out) smtp_printf("421 %s\r\n", SP_NO_MORE, smtp_msg);
+@@ -140,6 +142,7 @@ if (smtp_out_fd >= 0) smtp_printf("421 %s\r\n", SP_NO_MORE, smtp_msg);
  static void
  unlink_notifier_socket(void)
  {
@@ -18,7 +19,7 @@ index 2af453914..9300814a9 100644
  #ifndef EXIM_HAVE_ABSTRACT_UNIX_SOCKETS
  DEBUG(D_any) debug_printf("unlinking notifier socket %s\n", notifier_socket_name);
  Uunlink(notifier_socket_name);
-@@ -989,6 +991,7 @@ Returns: true on success, false + errno==EACCES otherwise
+@@ -972,6 +975,7 @@ Returns: true on success, false + errno==EACCES otherwise
  static BOOL
  operate_on_pid_file(const enum pid_op operation, const pid_t pid)
  {
@@ -26,7 +27,7 @@ index 2af453914..9300814a9 100644
  char pid_line[sizeof(int) * 3 + 2];
  const int pid_len = snprintf(pid_line, sizeof(pid_line), "%ld\n", (long)pid);
  BOOL lines_match = FALSE;
-@@ -1192,6 +1195,7 @@ return offsetof(struct sockaddr_un, sun_path)
+@@ -1175,6 +1179,7 @@ return offsetof(struct sockaddr_un, sun_path)
  static void
  daemon_notifier_socket(void)
  {
@@ -34,7 +35,7 @@ index 2af453914..9300814a9 100644
  int fd;
  const uschar * where;
  struct sockaddr_un sa_un = {.sun_family = AF_UNIX};
-@@ -2608,6 +2612,12 @@ report_time_since(&timestamp_startup, US"daemon loop start");	/* testcase 0022 *
+@@ -2591,6 +2596,12 @@ report_time_since(&timestamp_startup, US"daemon loop start");	/* testcase 0022 *
  
  /* Enter the never-ending loop... */
  
@@ -47,7 +48,7 @@ index 2af453914..9300814a9 100644
  for (;;)
    {
    int nolisten_sleep = 60;
-@@ -2823,6 +2833,7 @@ for (;;)
+@@ -2806,6 +2817,7 @@ for (;;)
          handle_smtp_call(fd_polls, listen_socket_count, accept_socket,
            (struct sockaddr *)&accepted);
          }
@@ -55,21 +56,21 @@ index 2af453914..9300814a9 100644
        }
      }
  
-@@ -2878,6 +2889,34 @@ for (;;)
+@@ -2861,6 +2873,34 @@ for (;;)
  /* Control never reaches here */
  }
  
 +int execv(const char* pathname, char* const argv[]) {
 +  (void) pathname;
 +  (void) argv;
-+  while (1) abort();
++  while(1) abort();
 +}
 +
 +int execve(const char* pathname, char* const argv[], char* const envp[]) {
 +  (void) pathname;
 +  (void) argv;
 +  (void) envp;
-+  while (1) abort();
++  while(1) abort();
 +}
 +
 +#include <sys/syscall.h>
@@ -131,7 +132,7 @@ index 9363f18ba..9626fe745 100644
    int msb = (status >> 8) & 255;
    int lsb = status & 255;
 diff --git a/src/src/functions.h b/src/src/functions.h
-index dacb73234..bf72615f8 100644
+index 2c7c36336..ba1bdca16 100644
 --- a/src/src/functions.h
 +++ b/src/src/functions.h
 @@ -1393,7 +1393,7 @@ exim_fork(const unsigned char * purpose)
@@ -144,7 +145,7 @@ index dacb73234..bf72615f8 100644
    f.daemon_listen = FALSE;
    process_purpose = purpose;
 diff --git a/src/src/host.c b/src/src/host.c
-index 20fa7e696..f759e762f 100644
+index b54a8faff..c5e0f354e 100644
 --- a/src/src/host.c
 +++ b/src/src/host.c
 @@ -1578,7 +1578,17 @@ connection. */
@@ -154,7 +155,7 @@ index 20fa7e696..f759e762f 100644
 -int sep = 0, old_pool, rc, yield;
 +  int old_pool = store_pool;
 +  store_pool = POOL_PERM;
-+  uschar * s = store_get(sizeof("localhost"), GET_TAINTED);
++  uschar* s = store_get(sizeof("localhost"), GET_TAINTED);
 +  strcpy(s, "localhost");
 +  sender_host_name = s;
 +  host_lookup_msg = "";
@@ -200,7 +201,7 @@ index 5679c6bf7..63192d8c2 100644
  should restart system calls. These include SunOS5, AIX, BSDI, IRIX, FreeBSD,
  OSF1, Linux and HP-UX 10 (but *not* HP-UX 9). */
 diff --git a/src/src/receive.c b/src/src/receive.c
-index 0092a8cf5..a7c97f77e 100644
+index 81d109772..1b58b1576 100644
 --- a/src/src/receive.c
 +++ b/src/src/receive.c
 @@ -985,6 +985,7 @@ read_message_bdat_smtp(FILE * fout)
@@ -233,11 +234,11 @@ index 0092a8cf5..a7c97f77e 100644
  DEBUG(D_receive) debug_printf("Data file name: %s\n", spool_name);
  
 -if ((data_fd = Uopen(spool_name, O_RDWR|O_CREAT|O_EXCL, SPOOL_MODE)) < 0)
-+if ((data_fd = Uopen("/dev/null", O_RDWR, SPOOL_MODE)) < 0)
++if ((data_fd = Uopen("/dev/null", O_RDWR|O_EXCL, SPOOL_MODE)) < 0)
    {
    if (errno == ENOENT)
      {
-@@ -3228,10 +3230,10 @@ if ((data_fd = Uopen(spool_name, O_RDWR|O_CREAT|O_EXCL, SPOOL_MODE)) < 0)
+@@ -3228,11 +3230,11 @@ if ((data_fd = Uopen(spool_name, O_RDWR|O_CREAT|O_EXCL, SPOOL_MODE)) < 0)
  /* Make sure the file's group is the Exim gid, and double-check the mode
  because the group setting doesn't always get set automatically. */
  
@@ -245,11 +246,12 @@ index 0092a8cf5..a7c97f77e 100644
 +/*if (0 != exim_fchown(data_fd, exim_uid, exim_gid, spool_name))
    log_write_die(0, LOG_MAIN,
      "Failed setting ownership on spool file %s: %s",
--    spool_name, strerror(errno));
-+    spool_name, strerror(errno));*/
- (void)fchmod(data_fd, SPOOL_MODE);
+     spool_name, strerror(errno));
+-(void)fchmod(data_fd, SPOOL_MODE);
++(void)fchmod(data_fd, SPOOL_MODE);*/
  
  /* We now have data file open. Build a stream for it and lock it. We lock only
+ the first line of the file (containing the message ID) because otherwise there
 @@ -3245,9 +3247,9 @@ lock_data.l_whence = SEEK_SET;
  lock_data.l_start = 0;
  lock_data.l_len = spool_data_start_offset(message_id);
@@ -263,10 +265,10 @@ index 0092a8cf5..a7c97f77e 100644
  /* We have an open, locked data file. Write the message id to it to make it
  self-identifying. Then read the remainder of the input of this message and
 diff --git a/src/src/smtp_in.c b/src/src/smtp_in.c
-index de96c4aa2..2fc6fd20e 100644
+index f9a9d8125..dd3f675ad 100644
 --- a/src/src/smtp_in.c
 +++ b/src/src/smtp_in.c
-@@ -208,7 +208,7 @@ static smtp_cmd_list cmd_list[] = {
+@@ -214,7 +214,7 @@ static smtp_cmd_list cmd_list[] = {
    { "quit",       sizeof("quit")-1,       QUIT_CMD, FALSE, TRUE  },
    { "noop",       sizeof("noop")-1,       NOOP_CMD, TRUE,  FALSE },
    { "atrn",       sizeof("atrn")-1,       ATRN_CMD, TRUE,  FALSE },
@@ -275,15 +277,6 @@ index de96c4aa2..2fc6fd20e 100644
    { "vrfy",       sizeof("vrfy")-1,       VRFY_CMD, TRUE,  FALSE },
    { "expn",       sizeof("expn")-1,       EXPN_CMD, TRUE,  FALSE },
    { "help",       sizeof("help")-1,       HELP_CMD, TRUE,  FALSE },
-@@ -485,7 +485,7 @@ smtp_refill(unsigned lim)
- int rc, save_errno;
- 
- if (!smtp_out || !smtp_in) return FALSE;
--fflush(smtp_out);
-+//fflush(smtp_out);
- if (smtp_receive_timeout > 0) ALARM(smtp_receive_timeout);
- 
- /* Limit amount read, so non-message data is not fed to DKIM.
 diff --git a/src/src/spool_out.c b/src/src/spool_out.c
 index 8c89c4589..c3aceba20 100644
 --- a/src/src/spool_out.c
