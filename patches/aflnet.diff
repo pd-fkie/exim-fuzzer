@@ -1,0 +1,22 @@
+diff --git a/src/src/daemon.c b/src/src/daemon.c
+index 18c4a5bef..220ebfe3f 100644
+--- a/src/src/daemon.c
++++ b/src/src/daemon.c
+@@ -12,7 +12,7 @@
+ 
+ #include "exim.h"
+ 
+-static int _in_target = 1;
++static int _in_target = 0;
+ 
+ 
+ /* Structure for holding data for each SMTP connection */
+@@ -2598,7 +2598,7 @@ report_time_since(&timestamp_startup, US"daemon loop start");	/* testcase 0022 *
+ 
+ #ifdef __AFL_INIT
+   _in_target = 0;
+-  __AFL_INIT();
++  //__AFL_INIT();
+   _in_target = 1;
+ #endif
+ 
