@@ -17,8 +17,8 @@
     - for this we chose to "desocket" the applications with libdesock and serve the individual
       packets over a shared memory channel
 - we compared our tool to AFLNet, arguably the most popular network fuzzer at the time of writing this
-- found that our setup gave us 42x performance boost and enabled us to get a lot more coverage (?)
-- we were able to uncover one new vulnerabilities in already heavily fuzzed software
+- found that our setup gave us a 42x performance boost and enabled us to get a lot more coverage (TODO: coverage evaluation)
+- we were able to uncover new vulnerabilities in already heavily fuzzed software
 - if you'd like to check the source code out yourself, you can find it [here]() on Github
 
 ## Writing a custom fuzzer
