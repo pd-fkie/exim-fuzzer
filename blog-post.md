@@ -10,6 +10,7 @@
 - for the vulnerability research we do at work we built a high-performance network fuzzer
   that tackles these problems and would like to detail its setup in this post
 
+
 - the first thing we addressed was the problem of input generation
     - we had to come up with our own mutators and input representation that works better with text-based inputs
     - for that we used LibAFL, a library made for building custom fuzzers, which made writing our own
@@ -62,7 +63,7 @@
   ```
   ...and plug the `PacketBasedInput` into our fuzzer without hassle, thanks to LibAFL
 
-## Fast message passing
+## Implementing fast message passing
 - now we have a good method for input generation but we don't want to sacrifice efficiency for effectiveness
 - so we need a fast method of transmitting fuzz input to the application
 - this is where our desocketing library [libdesock]() comes into play
