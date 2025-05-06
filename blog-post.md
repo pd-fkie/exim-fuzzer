@@ -18,7 +18,7 @@
       packets over a shared memory channel
 - we compared our tool to AFLNet, arguably the most popular network fuzzer at the time of writing this
 - found that our setup gave us 42x performance boost and enabled us to get a lot more coverage (?)
-- we were able to uncover one new vulnerability in already heavily fuzzed software
+- we were able to uncover one new vulnerabilities in already heavily fuzzed software
 - if you'd like to check the source code out yourself, you can find it [here]() on Github
 
 ## Writing a custom fuzzer
@@ -29,23 +29,23 @@
   > PORT 192,168,1,178,12,34
   < 200 Okay
   ```
-- What could be sensible ways to mutate this message?
+- What could be a sensible way to mutate this message?
     - Perhaps we could replace the numbers in the command with other numbers
       like `-1`, `127`, `4294967295`, etc.
-    - or we could replace the `PORT` command with another command
-    - or we could try if `PORT` takes other arguments by inserting random text separated by spaces
+    - or we could replace the `PORT` command with something else
+    - or we could try if `PORT` takes other arguments by inserting more text separated by spaces
 - Either way, we need meaningful text-based mutations and an input representation that enables them
 - Our approach was to represent individual messages of a protocol as a stream of tokens, i.e. a `TokenStream`
 - Where a `Token` is either a number, whitespace or normal text
-- The message above is represented as
+- The message above is parsed as
   ```
   Text("PORT"), Whitespace(" "), Number("192"), Text(","), Number("168"), [...], Whitespace("\r\n")
   ```
-- This enables mutators to have some sense of "awareness", i.e. the ability to operate on actually meaningful, semantic units of a message
-  instead of random bytes
+- This enables mutators to have some sense of "awareness", i.e. the ability to operate on entire meaningful, semantic units of a message
     - We can mutate the individual numbers of the PORT command
+    - We can mutate the command in isolation
     - We can duplicate/delete/crossover entire arguments to commands
-- and much more while still being low-level enough to just flip some bits
+- and much more while still being low-level enough to just flip some bits in the text
 - Then we can go to the next level of our input representation
 - network protocols are a back and forth of multiple messages, so our input needs to be a sequence of `TokenStream`s, not just a single one
 - in rust this is very easy to implement
@@ -55,7 +55,6 @@
         Number(Vec<u8>),
         Whitespace(Vec<u8>),
         Text(Vec<u8>),
-        Constant(Vec<u8>), // for text-tokens that come straight from the dictionary
     }
 
     struct TokenStream(Vec<TextToken>);
@@ -68,17 +67,17 @@
 - now we have a good method for input generation but we don't want to sacrifice efficiency for effectiveness
 - so we need a fast method of transmitting fuzz input to the application
 - this is where our desocketing library [libdesock]() comes into play
-- libdesock enables us to customize what happens when a network application sends or receives messages over the network
+- libdesock enables us to customize what happens when a network application sends or receives data over the network
     - it hooks all network operations that the application normally would delegate to the kernel and
-      emulates them in user-space
-    - when the application tries to read data from a network connection, it redirects the reads to some
-      other input channel, e.g. stdin
-- in our case, the fuzzer sets up a shared memory channel
-- in each iteration libdesock reads the input from the shm channel
-- this is possible due to the "hooks" feature of libdesock
-- we can simply implement our own "input hook" and "output hook" that determine what happens on a network
-  send/recv
-- in less than 50 lines of C code we attach to the shared memory channel and read from it:
+      handles them in user-space
+    - when the application requests data from a network socket, it redirects the reads to some
+      other input channel, normally stdin
+- in our case the input channel we used was a shared memory channel
+- libdesock attaches to this shared memory channel and whenever the target does a send() or recv() it feeds the
+  fuzz input from there to the application
+- this is made possible by to the "hooks" feature of libdesock
+- libdesock offers an input hook to customize what happens when the target requests data from a network connection
+- we simply implemented our own hook in less than 50 lines of C code that reads from the shared memory channel
   ```c
     // Set by the fuzzer in each iteration:
     typedef struct {
