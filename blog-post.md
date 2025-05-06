@@ -105,13 +105,13 @@
 - You might ask yourself how multiple messages are handled since we are just dealing with one
   flat memory buffer in shm
 - the TokenStream's from the `PacketBasedInput` got concatenated, separated by the string `--------`
-- libdesock automatically detects this separator and feeds this packets individually to the application
+- libdesock automatically detects this separator and feeds the packets individually to the application
 
 ## fuzzing actually
 - the rest of the fuzzer is kept very simple: no powerschedules, no mutation scheduling, no
-  compare coverage, no extra feedback about the protocol state of the target, etc.
+  compare coverage, no extra feedback about the protocol state, etc.
 - results
-    - compare our fuzzer to AFLNet
+    - we compared our fuzzer to AFLNet
     - with AFLNet we got around ~30 exec/s on one core and were not able to utilize
       multiple cores
     - with our fuzzer we got around ~1200 exec/s pro core and were able to utilize
