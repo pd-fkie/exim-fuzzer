@@ -73,11 +73,11 @@
     - when the application requests data from a network socket, it redirects the reads to some
       other input channel, normally stdin
 - in our case the input channel we used was a shared memory channel
-- libdesock attaches to this shared memory channel and whenever the target does a send() or recv() it feeds the
+- libdesock attaches to this shared memory channel and whenever the target does a recv() it feeds the
   fuzz input from there to the application
-- this is made possible by to the "hooks" feature of libdesock
-- libdesock offers an input hook to customize what happens when the target requests data from a network connection
-- we simply implemented our own hook in less than 50 lines of C code that reads from the shared memory channel
+- this is made possible by the "hooks" feature of libdesock
+- libdesock offers an input hook to customize what happens when the target requests data
+- we simply implemented our own hook in less than 50 lines of C code that reads the messages from the shared memory channel
   ```c
     // Set by the fuzzer in each iteration:
     typedef struct {
