@@ -1,24 +1,26 @@
-# How to build high-performance network fuzzers with LibAFL and libdesock
+# How to build a high-performance network fuzzer with LibAFL and libdesock
 
-- network fuzzing usually involves either real TCP connections or some sort
-  of emulation/virtualization with snapshot-based fuzzing
-- all of these techniques come with a big overhead that depletes fuzzing performance
-- for the vulnerability research we do at work we built a high-performance network fuzzer with
-  minimal overhead and would like to detail its setup in this post
-- the first thing we tackled was the problem of input generation
-    - AFL's input generation was tailored towards binary file formats, which does not help us
-      much for text-based network protocols so we had to come up with our own
-      mutators and input representation that works better with pure ASCII inputs
-    - we built our own fuzzer with our own mutators in LibAFL
+- existing network fuzzing solutions struggle on all fronts
+- fuzzing speed is a big problem because they use either real network connections or
+  emulation/virtualization for snapshot-based fuzzing
+- both come with a huge overhead
+- and they struggle with deeply exploring the target, since most of the tools out there are
+  built around AFL
+- but AFL is a fuzzer for binary file formats while most network protocols are text-based
+- for the vulnerability research we do at work we built a high-performance network fuzzer
+  that tackles these problems and would like to detail its setup in this post
+
+- the first thing we addressed was the problem of input generation
+    - we had to come up with our own mutators and input representation that works better with text-based inputs
+    - for that we used LibAFL, a library made for building custom fuzzers, which made writing our own
+      mutators very easy
 - the second problem we approached was how to actually feed inputs to network applications
     - for this we chose to "desocket" the applications with libdesock and serve the individual
       packets over a shared memory channel
-- this setup gave us 42x performance boost compared to AFLNet and allowed us to find vulnerabilities
+- this setup gave us 42x performance boost compared to other tools and enabled us to uncover vulnerabilities
   in already heavily fuzzed software within hours
-- if you'd like to check it out, it is on Github [here](link)
 
 ## Writing a custom fuzzer
-- If we want our fuzzer to find bugs we need to emancipate ourselves from AFL
 - Let's have a look at this message exchange in the FTP protocol that is used to establish
   a connection for data transmission:
   ```
@@ -106,5 +108,19 @@
 
 ## fuzzing actually
 - results
-    - speed: with AFLNet we got ~30 exec/s, with our fuzzer ~1200 exec/s
-    - scalability: easy to fuzz on 12 cores with linear scaling
+    - compare our fuzzer to AFLNet, arguably the most popular network fuzzer at the time of writing this
+    - with AFLNet we got around ~30 exec/s on one core and coverage plateaued after
+      a couple of hours
+    - with our fuzzer we got around ~1200 exec/s pro core and were able to utilize
+      multicore-fuzzing with linear scaling
+    - concrete stats: we were fuzzing @ 15k exec/s on 12 cores
+    - enabled us to squeeze multiple bugs out of heavily vetted code
+- lesson
+    - as more and more peolple are fuzzing, stock-solutions like
+      AFL become less and less effective
+    - if you want to find bugs don't just rely on existing fuzzers
+    - fuzzing solutions that give you an edge over the competition are not
+      that far away
+    - putting a little bit of effort into writinga custom fuzzers can
+      give a big payoff
+    - in our opinion _the_ way to go for future vulnerability research
