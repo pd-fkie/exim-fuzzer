@@ -135,8 +135,9 @@ QUIT
 - with our fuzzer we got around ~1200 exec/s pro core and were able to utilize
   multicore-fuzzing with linear scaling
 - TODO: coverage evaluation
-- enabled us to squeeze multiple bugs out of heavily vetted code
+- enabled us to squeeze multiple bugs out of heavily fuzzed code
 - TODO: more details about the fuzzing campaign, graphs?
+  - development of line coverage AFLNet compared to our fuzzer
 
 - as more and more peolple are fuzzing, stock-solutions like
   AFL become less and less effective
