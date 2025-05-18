@@ -15,7 +15,7 @@
 - the second problem we approached was how to actually feed inputs to network applications
     - for this we chose to "desocket" the applications with [libdesock]() and serve the individual
       packets over a shared memory channel
-- we compared our tool to AFLNet, arguably the most popular network fuzzer at the time of writing this
+- we compared our tool to [AFLNet](), arguably the most popular network fuzzer at the time of writing this
 - found that our setup gave us a 42x performance boost and enabled us to get a lot more coverage (TODO: coverage evaluation)
 - we were able to uncover new vulnerabilities in already heavily fuzzed software
 
@@ -130,17 +130,17 @@ QUIT
 ```
 
 ## Reaping the Results
-  - we compared our fuzzer to AFLNet
-  - with AFLNet we got around ~30 exec/s on one core and were not able to utilize
-    multiple cores
-  - with our fuzzer we got around ~1200 exec/s pro core and were able to utilize
-    multicore-fuzzing with linear scaling
-  - TODO: coverage evaluation
-  - enabled us to squeeze multiple bugs out of heavily vetted code
+- with AFLNet we got around ~30 exec/s on one core and were not able to utilize
+  multiple cores
+- with our fuzzer we got around ~1200 exec/s pro core and were able to utilize
+  multicore-fuzzing with linear scaling
+- TODO: coverage evaluation
+- enabled us to squeeze multiple bugs out of heavily vetted code
+- TODO: more details about the fuzzing campaign, graphs?
 
-  - as more and more peolple are fuzzing, stock-solutions like
-    AFL become less and less effective
-  - if you want to find bugs don't just rely on existing off-the-shelf fuzzers
-  - fuzzing solutions that give you an edge are not that far away
-  - putting a little bit of effort into writing custom fuzzers can
-    give a big payoff
+- as more and more peolple are fuzzing, stock-solutions like
+  AFL become less and less effective
+- if you want to find bugs don't just rely on existing off-the-shelf fuzzers
+- fuzzing solutions that give you an edge are not that far away
+- putting a little bit of effort into writing custom fuzzers can
+  give a big payoff
