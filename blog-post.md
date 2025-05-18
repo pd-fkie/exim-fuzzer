@@ -30,18 +30,19 @@
   < 200 Okay
   ```
 - What could be a sensible way to mutate this message?
+- And do we just want to fuzz the message parser or could there be mutations that exercise the application logic on a higher level?
     - Perhaps we could replace the numbers in the command with other numbers
       like `-1`, `127`, `4294967295`, etc.
     - or we could replace the `PORT` command with something else
     - or we could try if `PORT` takes other arguments by inserting more text separated by spaces
-- Either way, we need meaningful text-based mutations and an input representation that enables them
+- Either way, our fuzzer needs meaningful text-based mutations and an input representation that enables them
 - Our approach was to represent individual messages of a protocol as a stream of tokens, i.e. a `TokenStream`
 - Where a `Token` is either a number, whitespace or normal text
 - The message above is parsed as
   ```
   Text("PORT"), Whitespace(" "), Number("192"), Text(","), Number("168"), [...], Whitespace("\r\n")
   ```
-- This enables mutators to have some sense of "awareness", i.e. the ability to operate on entire meaningful, semantic units of a message
+- This enables mutators to have some sense of "awareness", i.e. the ability to operate on entire meaningful, semantic units of text
     - We can mutate the individual numbers of the PORT command
     - We can mutate the command in isolation
     - We can duplicate/delete/crossover entire arguments to commands
@@ -62,6 +63,8 @@
     struct PacketBasedInput(Vec<TokenStream>);
   ```
   ...and plug the `PacketBasedInput` into our fuzzer without hassle, thanks to LibAFL
+- the rest of the fuzzer is kept very simple: no powerschedules, no mutation scheduling, no
+  compare coverage, no extra feedback about the protocol state, etc.
 
 ## Implementing fast message passing
 - now we have a good method for input generation but we don't want to sacrifice efficiency for effectiveness
@@ -77,7 +80,7 @@
   fuzz input from there to the application
 - this is made possible by the "hooks" feature of libdesock
 - libdesock offers an input hook to customize what happens when the target requests data
-- we simply implemented our own hook in less than 50 lines of C code that reads the messages from the shared memory channel
+- we simply implemented our own hook in less than 50 lines of C code
   ```c
     // Set by the fuzzer in each iteration:
     typedef struct {
@@ -104,12 +107,30 @@
   ```
 - You might ask yourself how multiple messages are handled since we are just dealing with one
   flat memory buffer in shm
-- the TokenStream's from the `PacketBasedInput` got concatenated, separated by the string `--------`
-- libdesock automatically detects this separator and feeds the packets individually to the application
+- the `Token`s of a `TokenStream` in a `PacketBasedInput` get concatenated to create a single message
+- Multiple messages are separated by the string `--------`, which is defined by libdesock
+- libdesock automatically detects this separator and feeds the messages individually to the application
+- For example, one of our corpus entries for a mail server that we fuzzed was:
+```
+EHLO fuzz
+--------
+AUTH PLAIN
+--------
+AHRlc3QAdGVzdA==
+--------
+MAIL FROM:<fuzzer@localhost>
+--------
+RCPT TO:<exim@localhost>
+--------
+DATA
+--------
+<email content here>
+.
+--------
+QUIT
+```
 
-## fuzzing actually
-- the rest of the fuzzer is kept very simple: no powerschedules, no mutation scheduling, no
-  compare coverage, no extra feedback about the protocol state, etc.
+## The fruits of our labor
 - results
     - we compared our fuzzer to AFLNet
     - with AFLNet we got around ~30 exec/s on one core and were not able to utilize
