@@ -16,10 +16,8 @@
     - for this we chose to "desocket" the applications with [libdesock]() and serve the individual
       packets over a shared memory channel
 - we compared our tool to [AFLNet](), arguably the most popular network fuzzer at the time of writing this
-- found that our setup gave us a 42x performance boost and enabled us to get a lot more coverage (TODO: coverage evaluation)
+- found that our setup gave us a 42x performance boost and enabled us to get orders of magnitude more coverage
 - we were able to uncover new vulnerabilities in already heavily fuzzed software
-
-- if you'd like to check the source code out yourself, you can find it [here]() on Github
 
 ## Writing a Custom Fuzzer
 - If we want our fuzzer to find bugs we need to emancipate ourselves from AFL
@@ -134,10 +132,8 @@ QUIT
   multiple cores
 - with our fuzzer we got around ~1200 exec/s pro core and were able to utilize
   multicore-fuzzing with linear scaling
-- TODO: coverage evaluation
+- got hundreds of lines more coverage
 - enabled us to squeeze multiple bugs out of heavily fuzzed code
-- TODO: more details about the fuzzing campaign, graphs?
-  - development of line coverage AFLNet compared to our fuzzer
 
 - as more and more peolple are fuzzing, stock-solutions like
   AFL become less and less effective
@@ -145,3 +141,5 @@ QUIT
 - fuzzing solutions that give you an edge are not that far away
 - putting a little bit of effort into writing custom fuzzers can
   give a big payoff
+
+- if you'd like to check the source code out yourself, you can find it [here]() on Github
