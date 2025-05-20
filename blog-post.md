@@ -53,7 +53,7 @@ This enables our mutators to have some sense of "awareness", i.e. the
 ability to operate on entire meaningful, semantic units of text. Now
 we can individually mutate the numbers, the command, entire arguments,
 and much more while still being low-level enough to just flip some bits
-in the text.
+in the text.    
 Then we can get to the next level of our input representation.
 Since network protocols are a back and forth of multiple messages, our
 input needs to be a sequence of `TokenStream`s, not just a single one.
@@ -75,7 +75,7 @@ compare coverage or extra feedback about the protocol state.
 
 ## Implementing Fast Message Passing
 Now we have a good method for input generation but we don't want to sacrifice efficiency for effectiveness.
-In other words: We need a high-performance method of transmitting fuzz input to the application.   
+In other words: We need a high-performance method of transmitting fuzz input to the application.
 And this is where our desocketing library [libdesock](https://github.com/fkie-cad/libdesock) comes into play.   
 With the [desocketing approach](https://lolcads.github.io/posts/2022/02/libdesock/), we can hook the network functions of the target and handle
 network I/O that would otherwise be delegated to the kernel in userspace.
@@ -110,7 +110,7 @@ size_t hook_input (char* buf, size_t size) {
     return size;
 }
 ```
-You might ask yourself how multiple messages are handled since we are just dealing with one flat shared memory buffer.
+You might ask yourself how multiple messages are handled since we are just dealing with one flat shared memory buffer.   
 The `Token`s of a `TokenStream` in a `PacketBasedInput` get concatenated to create a single message.
 Then, the individual messages get separated by the string `--------`, which is understood by libdesock.
 libdesock automatically detects this separator and feeds input to the application one message at a time.
@@ -144,7 +144,7 @@ The key lesson we learned is that if you want to find bugs, don't just rely on o
 fuzzers. Fuzzing solutions that can give you an edge are not as far away as you might think. Investing even a little bit of effort,
 like we did, can give you a big payoff. 
 
-If you'd like to check out our tool, you can find it [here](https://github.com/pd-fkie/exim-fuzzer) on Github.
+If you'd like to check out our fuzzer, you can find it [here](https://github.com/pd-fkie/exim-fuzzer) on Github.
 
 Thanks for reading!
 
