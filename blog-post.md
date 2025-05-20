@@ -21,7 +21,7 @@ orders of magnitude more coverage and new vulnerabilities in already heavily
 fuzzed software.
 
 ## Writing a Custom Fuzzer
-If we want our fuzzer to find bugs we need to emancipate ourselves from AFL.
+If we want to find bugs we need to emancipate ourselves from off-the-shelf tools like AFL.   
 Let's have a look at this message exchange in the FTP protocol that is used to establish
 a connection for data transmission:
 ```
@@ -141,7 +141,7 @@ With AFLNet we got around \~30 exec/s on one core and were not able to utilize m
 With our fuzzer, we got around \~1200 exec/s pro core and were able to utilize multicore-fuzzing with linear
 scaling (!), which came as a surprise to us since our targets were very syscall-heavy.
 Overall we got hundreds of lines more coverage and found multiple bugs in already heavily fuzzed code.   
-The key lesson that we learned from this is that if you want to find bugs, don't just rely on off-the-shelf
+The key lesson we learned is that if you want to find bugs, don't just rely on off-the-shelf
 fuzzers. Fuzzing solutions that can give you an edge are not as far away as you might think. Investing even a little bit of effort,
 like we did, can give you a big payoff. 
 
