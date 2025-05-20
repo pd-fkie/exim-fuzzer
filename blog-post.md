@@ -7,8 +7,7 @@ huge overhead.
 And, they struggle with deeply exploring the target since most of
 the tools out there are built on top of AFL.   
 For our vulnerability research, we built a high-performance network fuzzer
-that tackles these problems and would like to present its setup in this post.
-
+that tackles these problems and would like to present its setup in this post.   
 The first issue we addressed was the problem of input generation. We developed
 our own input representation and mutators that work with text-based protocols.
 For that we used [LibAFL](https://github.com/AFLplusplus/LibAFL), a library for building custom fuzzers, which made
@@ -17,12 +16,12 @@ The second problem we approached was how to feed inputs to network applications.
 For this, we chose to "desocket" the applications with [libdesock](https://github.com/fkie-cad/libdesock) and serve
 the individual packets over a shared memory channel.   
 We compared our tool to [AFLNet](https://github.com/aflnet/aflnet), arguably the most popular network fuzzer at
-the time of writing this. We found that our setup gave us a 42x performance boost,
+the time of writing this, and found that our setup gave us a 42x performance boost,
 orders of magnitude more coverage and new vulnerabilities in already heavily
 fuzzed software.
 
 ## Writing a Custom Fuzzer
-If we want our fuzzer to find bugs we need to emancipate ourselves from AFL.   
+If we want our fuzzer to find bugs we need to emancipate ourselves from AFL.
 Let's have a look at this message exchange in the FTP protocol that is used to establish
 a connection for data transmission:
 ```
@@ -57,7 +56,7 @@ and much more while still being low-level enough to just flip some bits
 in the text.
 Then we can get to the next level of our input representation.
 Since network protocols are a back and forth of multiple messages, our
-input needs to be a sequence of `TokenStream`'s, not just a single one.
+input needs to be a sequence of `TokenStream`s, not just a single one.
 In Rust, this is very easy to implement. We simply define our data types...
 ```rs
 enum TextToken {
@@ -81,7 +80,7 @@ And this is where our desocketing library [libdesock](https://github.com/fkie-ca
 With the [desocketing approach](https://lolcads.github.io/posts/2022/02/libdesock/), we can hook the network functions of the target and handle
 network I/O in userspace that would otherwise be delegated to the kernel.
 Normally desocketing libraries redirect `recv()`'s on network sockets to some other input channel like stdin
-but libdesock allows us to customize this behavior.
+but libdesock allows us to customize this behavior and implement our own input channel.
 We chose to use a shared memory channel for input transmission because it has by far the lowest overhead of
 all IPC methods.
 
@@ -91,7 +90,7 @@ Our hook attaches to the shared memory channel and copies its data to the applic
 ```c
 // Set by the fuzzer in each iteration:
 typedef struct {
-    size_t cursor;
+    size_t cursor; // set to 0 for each new input
     size_t size; // length of fuzz input
     char data[]; // fuzz input
 } PacketBuffer;
@@ -141,13 +140,12 @@ We did some network fuzzing with AFLNet and our tool.
 With AFLNet we got around \~30 exec/s on one core and were not able to utilize multiple cores for fuzzing.
 With our fuzzer, we got around \~1200 exec/s pro core and were able to utilize multicore-fuzzing with linear
 scaling (!), which came as a surprise to us since our targets were very syscall-heavy.
-Overall we got hundreds of lines more coverage and found multiple bugs in already heavily fuzzed code.
-
-## Conclusion
-The key lesson that we learned from this is how ineffective existing fuzzers are. If you want to find bugs, don't just rely on off-the-shelf
+Overall we got hundreds of lines more coverage and found multiple bugs in already heavily fuzzed code.   
+The key lesson that we learned from this is that if you want to find bugs, don't just rely on off-the-shelf
 fuzzers. Fuzzing solutions that can give you an edge are not as far away as you might think. Investing even a little bit of effort,
 like we did, can give you a big payoff. 
 
+If you'd like to check out our tool, you can find it [here](https://github.com/pd-fkie/exim-fuzzer) on Github.
+
 Thanks for reading!
 
-If you'd like to check our tool out yourself, you can find it [here](https://github.com/pd-fkie/exim-fuzzer) on Github.
