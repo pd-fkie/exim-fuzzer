@@ -76,17 +76,16 @@ compare coverage or extra feedback about the protocol state.
 ## Implementing Fast Message Passing
 Now we have a good method for input generation but we don't want to sacrifice efficiency for effectiveness.
 In other words: We need a high-performance method of transmitting fuzz input to the application.   
-And this is where our desocketing library [libdesock](https://github.com/fkie-cad/libdesock) comes into play.
+And this is where our desocketing library [libdesock](https://github.com/fkie-cad/libdesock) comes into play.   
 With the [desocketing approach](https://lolcads.github.io/posts/2022/02/libdesock/), we can hook the network functions of the target and handle
-network I/O in userspace that would otherwise be delegated to the kernel.
+network I/O that would otherwise be delegated to the kernel in userspace.
 Normally desocketing libraries redirect `recv()`'s on network sockets to some other input channel like stdin
 but libdesock allows us to customize this behavior and implement our own input channel.
-We chose to use a shared memory channel for input transmission because it has by far the lowest overhead of
-all IPC methods.
+We chose to use shared memory because it has by far the lowest overhead of all IPC methods.
 
-To realize the fast message passing we made use of the [*hooks*](https://github.com/fkie-cad/libdesock/blob/main/src/hooks.c) feature of libdesock and quickly wrote
-our own *input hook* in less than 50 lines of C code.
-Our hook attaches to the shared memory channel and copies its data to the application whenever it is called:
+We made use of the [*hooks*](https://github.com/fkie-cad/libdesock/blob/main/src/hooks.c) feature of libdesock and quickly wrote
+our own *input hook* in less than 50 lines of C code that attaches to the shared memory channel and copies its data to the
+application whenever requested:
 ```c
 // Set by the fuzzer in each iteration:
 typedef struct {
