@@ -140,9 +140,10 @@ With AFLNet we got around \~30 exec/s on one core and were not able to utilize m
 With our fuzzer, we got around \~1200 exec/s pro core and were able to utilize multicore-fuzzing with linear
 scaling (!), which came as a surprise to us since our targets were very syscall-heavy.
 Overall we got hundreds of lines more coverage and found multiple bugs in already heavily fuzzed code.   
-The key lesson we learned is that if you want to find bugs, don't just rely on off-the-shelf
-fuzzers. Fuzzing solutions that can give you an edge are not as far away as you might think. Investing even a little bit of effort,
-like we did, can give you a big payoff. 
+
+The lesson we learned is that if we want to find bugs, we can't just rely on off-the-shelf
+fuzzers. A fuzzing solution that gave us an edge was not as far away as we thought.
+Even with a little bit of effort we got substantial performance increases.
 
 If you'd like to check out our fuzzer, you can find it [here](https://github.com/pd-fkie/exim-fuzzer) on Github.
 
