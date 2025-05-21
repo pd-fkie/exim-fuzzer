@@ -145,7 +145,7 @@ The lesson we learned is that if we want to find bugs, we can't just rely on off
 fuzzers. A fuzzing solution that gave us an edge was not as far away as we thought.
 Even with a little bit of effort we got substantial performance increases.
 
-If you'd like to check our tool out yourself, you can find it [here](https://github.com/pd-fkie/exim-fuzzer) on Github.
+If you're interested in the implementation details, you can find our fuzzer  [here](https://github.com/pd-fkie/exim-fuzzer) on Github.
 
 Thanks for reading!
 
